@@ -1,0 +1,54 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check if version is already published
+        id: version-check
+        run: |
+          VERSION=$(node -p "require('./pkg/package.json').version")
+          echo "package_version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view mattpocock-skills-unofficial-plugin@"$VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION is already published."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "Version $VERSION is not yet published."
+          fi
+
+      - name: Publish to npm
+        if: steps.version-check.outputs.published == 'false'
+        run: npm publish pkg/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip publish notice
+        if: steps.version-check.outputs.published == 'true'
+        run: echo "Skipping publish because version ${{ steps.version-check.outputs.package_version }} already exists."
