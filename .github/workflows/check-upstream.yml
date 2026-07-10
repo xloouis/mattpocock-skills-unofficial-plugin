@@ -1,0 +1,98 @@
+name: Check for upstream updates
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Check for new upstream release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for new upstream version
+        id: check
+        run: |
+          CURRENT=$(git -C upstream describe --tags --exact-match 2>/dev/null || echo "")
+          LATEST=$(git ls-remote --tags --refs https://github.com/mattpocock/skills.git | awk -F/ '{print $NF}' | grep '^v' | sort -V | tail -1)
+
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$LATEST" ]; then
+            echo "Could not determine latest upstream version."
+            echo "new_version=false" >> "$GITHUB_OUTPUT"
+          elif [ "$CURRENT" = "$LATEST" ]; then
+            echo "Already on latest upstream version: $LATEST"
+            echo "new_version=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New upstream version found: $LATEST (current: ${CURRENT:-none})"
+            echo "new_version=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if update branch already exists
+        id: branch-check
+        if: steps.check.outputs.new_version == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="update-upstream-${{ steps.check.outputs.latest }}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          if gh api "repos/${{ github.repository }}/git/refs/heads/$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH already exists. Skipping PR creation."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch $BRANCH does not exist."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update submodule
+        if: steps.branch-check.outputs.exists == 'false'
+        run: |
+          cd upstream
+          git fetch
+          git checkout ${{ steps.check.outputs.latest }}
+          cd ..
+          git add upstream
+          git status --short
+
+      - name: Build and verify
+        if: steps.branch-check.outputs.exists == 'false'
+        run: |
+          npm run build
+          npm run verify
+
+      - name: Create PR
+        if: steps.branch-check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ steps.branch-check.outputs.branch }}"
+          LATEST="${{ steps.check.outputs.latest }}"
+          git checkout -b "$BRANCH"
+          git commit -m "chore: update upstream to $LATEST"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Update upstream to $LATEST" \
+            --body "Updates the mattpocock/skills submodule to [$LATEST](https://github.com/mattpocock/skills/releases/tag/$LATEST)." \
+            --base main
+
+      - name: No update needed
+        if: steps.check.outputs.new_version == 'false' || steps.branch-check.outputs.exists == 'true'
+        run: echo "No new PR created."
