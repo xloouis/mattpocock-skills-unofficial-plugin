@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "node scripts/build.js",
+    "verify": "node scripts/verify.js",
     "publish-plugin": "npm run build && npm publish pkg/"
   }
 }

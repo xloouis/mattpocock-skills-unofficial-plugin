@@ -30,6 +30,9 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Verify package
+        run: npm run verify
+
       - name: Check if version is already published
         id: version-check
         run: |
