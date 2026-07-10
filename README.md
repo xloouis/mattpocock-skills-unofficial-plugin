@@ -4,6 +4,8 @@ An **unofficial community distribution** of [mattpocock/skills](https://github.c
 
 This repo is maintained by [xloouis](https://github.com/xloouis) and is not affiliated with Matt Pocock. The skill content is copied verbatim from upstream; only the npm packaging metadata is added.
 
+Published package: [mattpocock-skills-unofficial-plugin on npm](https://www.npmjs.com/package/mattpocock-skills-unofficial-plugin)
+
 ## Build
 
 ```bash
