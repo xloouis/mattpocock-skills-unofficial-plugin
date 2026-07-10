@@ -1,0 +1,11 @@
+{
+  "name": "mattpocock-skills-unofficial-plugin-dev",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Development wrapper that packages mattpocock/skills as an unofficial OMP plugin",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "publish-plugin": "npm run build && npm publish pkg/"
+  }
+}
