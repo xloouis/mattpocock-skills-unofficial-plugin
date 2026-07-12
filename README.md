@@ -6,6 +6,20 @@ This repo is maintained by [xloouis](https://github.com/xloouis) and is not affi
 
 Published package: [mattpocock-skills-unofficial-plugin on npm](https://www.npmjs.com/package/mattpocock-skills-unofficial-plugin)
 
+## Install
+
+Install from the OMP marketplace / npm registry:
+
+```bash
+omp install mattpocock-skills-unofficial-plugin
+```
+
+For a project-scoped install:
+
+```bash
+omp install mattpocock-skills-unofficial-plugin --scope=project
+```
+
 ## Build
 
 ```bash

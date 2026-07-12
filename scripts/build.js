@@ -44,7 +44,7 @@ omp install mattpocock-skills-unofficial-plugin
 For a project-scoped install:
 
 \`\`\`bash
-omp install -l mattpocock-skills-unofficial-plugin
+omp install mattpocock-skills-unofficial-plugin --scope=project
 \`\`\`
 
 ## License
